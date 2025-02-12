@@ -6,6 +6,9 @@ from .column_annotator import ColumnAnnotator
 from .properties_merger import PropertiesMerger
 from .temporal_extractor import TemporalExtractor
 from .spatial_extractor import SpatialExtractor
+from .properties_comparer import PropertiesComparer
+from .insights_extractor import InsightsExtractor
+from collections import Counter
 
 class TableSage:
     
@@ -23,6 +26,20 @@ class TableSage:
         if sampling == 'random':
             sample = df.head(sampling_number)
         return sample
+    
+    def create_profile(self):
+        profiles = {}
+        for col in self.df:
+            profile = self.df[col].describe().to_dict()
+            if self.df[col].dtype in ["float64", "int64"]:
+                profiles[col] = profile
+            elif self.df[col].dtype in ["object", "category"]:
+                profile = {k:v for k,v in profile.items() if k in ['count', 'unique']}
+                c = Counter(self.df[col].values)
+                no = 5
+                profile[f'top-{no}'] = [{'term': k, 'frequency': v} for k,v in c.most_common(no)]
+                profiles[col] = profile
+        return profiles
             
     ############### Table-Related Features ####################################
     
@@ -31,7 +48,7 @@ class TableSage:
         ts = TableSummarizer()
         sampled_df = self.sample(self.df, sampling, sampling_number)
         responses = ts.run(sampled_df, model, description_ids, endpoint, token)
-        result = self.merge_properties(responses, 'table_summary', model, endpoint, token) #TODO: Merger should be different
+        result = self.merge_properties(responses, model, 'table_summary', endpoint, token) #TODO: Merger should be different
         if not verbose:
             result['responses'] = responses
         return result
@@ -44,7 +61,7 @@ class TableSage:
         sampled_df = self.df[column].to_frame()
         sampled_df = self.sample(sampled_df, sampling, sampling_number)
         responses = cs.run(sampled_df, model, description_ids, endpoint, token)
-        result = self.merge_properties(responses, 'column_summary', model, endpoint, token) #TODO: Merger should be different
+        result = self.merge_properties(responses, model, 'column_summary', endpoint, token) #TODO: Merger should be different
         if not verbose:
             result['responses'] = responses
         return result
@@ -54,7 +71,7 @@ class TableSage:
         ta = TableAnnotator()
         sampled_df = self.sample(self.df, sampling, sampling_number)
         responses = ta.run(sampled_df, model, description_ids, endpoint, token)
-        result = self.merge_properties(responses, 'table_type', model, endpoint, token) #TODO: Merger should be different
+        result = self.merge_properties(responses, model, 'table_type', endpoint, token) #TODO: Merger should be different
         if not verbose:
             result['responses'] = responses
         return result
@@ -67,7 +84,7 @@ class TableSage:
         sampled_df = self.df[column].to_frame()
         sampled_df = self.sample(sampled_df, sampling, sampling_number)
         responses = ca.run(sampled_df, model, description_ids, endpoint, token)
-        result = self.merge_properties(responses, 'column_type', model, endpoint, token) #TODO: Merger should be different
+        result = self.merge_properties(responses, model, 'column_type', endpoint, token) #TODO: Merger should be different
         if not verbose:
             result['responses'] = responses
         return result
@@ -79,7 +96,7 @@ class TableSage:
             raise ValueError('Summary cannot be None!')
         te = TemporalExtractor()
         responses = te.run(summary, model, description_ids, endpoint, token)
-        result = self.merge_properties(responses, 'temporal_span', model, endpoint, token)
+        result = self.merge_properties(responses, model, 'temporal_span', endpoint, token)
         if not verbose:
             result['responses'] = responses
         return result
@@ -90,16 +107,33 @@ class TableSage:
             raise ValueError('Summary cannot be None!')
         se = SpatialExtractor()
         responses = se.run(summary, model, description_ids, endpoint, token)
-        result = self.merge_properties(responses, 'spatial_coverage', model, endpoint, token)
+        result = self.merge_properties(responses, model, 'spatial_coverage', endpoint, token)
         if not verbose:
             result['responses'] = responses
         return result    
     
+    def extract_insights(self, properties, model, endpoint=None, token=None):
+        profiles = self.create_profile()
+        for col in properties:
+            for k,v in properties[col].items():
+                profiles[col][k] = v
+        ie = InsightsExtractor()
+        prompt = ie.create_prompt(profiles)
+        response = ie.run_prompt(prompt, model, endpoint, token)
+        return {'result': response}
+
+    
     ############### Comparison-Related Features ###############################
+    def compare_properties(self, properties, model, property_type='properties', endpoint=None, 
+                         token=None):
+        pc = PropertiesComparer()
+        prompt = pc.create_prompt(properties, property_type)
+        response = pc.run_prompt(prompt, model, endpoint, token)
+        return {'result': response}
     
     ############### Fusion-Related Features ###################################
     
-    def merge_properties(self, properties, property_type, model, endpoint=None, 
+    def merge_properties(self, properties, model, property_type='properties', endpoint=None, 
                          token=None):
         pm = PropertiesMerger()
         prompt = pm.create_prompt(properties, property_type)

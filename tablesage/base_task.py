@@ -3,6 +3,7 @@ from openai import OpenAI
 import torch
 import traceback
 import re
+import json
 
 class BaseTask:
     def __init__(self):
@@ -11,7 +12,6 @@ class BaseTask:
     def run_prompts(self, prompts, model, endpoint=None, token=None):
         responses = []
         for nop, prompt in enumerate(prompts):
-            # print('Prompt no:', nop+1)
             response = self.run_prompt(prompt, model, endpoint, token)
             responses.append(response)
         return responses
@@ -59,15 +59,18 @@ class BaseTask:
     def run_prompts(self, prompts, model, endpoint=None, token=None):
         responses = []
         for nop, prompt in enumerate(prompts):
-            # print('Prompt no:', nop+1)
             response = self.run_prompt(prompt, model, endpoint, token)
             responses.append(response)
         return responses        
         
     def clean_response(self, response):
-        pattern = r'\{\s*"' + re.escape(self.property_type) + r'"\s*:\s*"([^"]*)"\s*\}'
+        pattern = r'\{[\s\S]*\}'
         match = re.search(pattern, response, re.DOTALL)
-        if match:
-            result = match.group(1).strip()
-            return result
+        if match:   # 1-line JSON
+            json_str = match.group(0)  # Get JSON content
+            try:
+                j = json.loads(json_str)  # Parse JSON
+                return j[self.property_type]
+            except json.JSONDecodeError as e:
+                return None
         return None

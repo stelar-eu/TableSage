@@ -1,6 +1,6 @@
-from .base_task import BaseTask
+from .text_task import TextTask
 
-class PropertiesMerger(BaseTask):
+class PropertiesMerger(TextTask):
     def __init__(self):
         self.descriptions = {
             "column_type": "Given the following column semantic types, provide a single table semantic type that combines and covers all of them.",
@@ -28,8 +28,8 @@ class PropertiesMerger(BaseTask):
         )
         
     def create_prompt(self, properties, property_type):
-        description = self.descriptions.get(property_type, "Provide a combined result for the given inputs.")
-        input_label = self.input_labels.get(property_type, "Inputs")
+        description = self.descriptions.get(property_type, "Provide a combined result for the given properties.")
+        input_label = self.input_labels.get(property_type, "Properties")
         
         partials = "\n".join(f"{nop+1}. {property}" for nop, property in enumerate(properties) if property is not None)
     
