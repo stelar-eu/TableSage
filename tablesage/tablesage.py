@@ -8,6 +8,7 @@ from .temporal_extractor import TemporalExtractor
 from .spatial_extractor import SpatialExtractor
 from .properties_comparer import PropertiesComparer
 from .insights_extractor import InsightsExtractor
+from .properties_fuser import PropertiesFuser
 from collections import Counter
 
 class TableSage:
@@ -139,5 +140,11 @@ class TableSage:
         prompt = pm.create_prompt(properties, property_type)
         response = pm.run_prompt(prompt, model, endpoint, token)
         return {'result': response}
-    
+ 
+    def fuse_properties(self, table_description, column_descriptions, insights, model, property_type='properties', endpoint=None, 
+                         token=None):
+        pf = PropertiesFuser()
+        prompt = pf.create_prompt(table_description, column_descriptions, insights)
+        response = pf.run_prompt(prompt, model, endpoint, token)
+        return {'result': response}    
     
