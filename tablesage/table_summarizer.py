@@ -1,10 +1,7 @@
-from .base_task import BaseTask
-import re
+from .table_task import TableTask
 
-class TableSummarizer(BaseTask):
+class TableSummarizer(TableTask):
     def __init__(self):
-        self.examined = set()
-        
         self.descriptions = [
             "Please look at the table below and provide a title for the table.",
             "Kindly refer to the table below and suggest a suitable title for it.",
@@ -53,26 +50,10 @@ class TableSummarizer(BaseTask):
             "After considering the table, please provide a summary that best represents it.",
         ]
         
-        self.structure = "#Task Description: {}\n\n# Input:\n**Table:**\n{}\n\nReturn the final result as JSON in the format {{\"summary\": \"<summary of table>\"}}.\n\n# Output:"
+        self.structure = ("#Task Description: {}\n\n"
+                          "#Input:\n"
+                          "**Table:**\n{}\n\n"
+                          "Return the final result as JSON in the format {{\"summary\": \"<summary of table>\"}}.\n\n"
+                          "#Output:")
         
-    def clean_response(self, response):
-        pattern = r'\{\s*"summary"\s*:\s*"([^"]*)"\s*\}'
-        match = re.search(pattern, response, re.DOTALL)
-        if match:
-            # print(response)
-            result = match.group(1).strip()
-            # print(result)
-            return result
-        return None
-        
-    def merge(self, responses, model, endpoint=None, token=None):
-        description = 'Given the following table summaries, provide a single table summary that combines and covers all of them.'
-        partials = ""
-        for nor, response in enumerate(responses):
-            partials += f"{nor+1}. {response}\n"
-        prompt = "#Task Description: {}\n\n# Input:\n**Summaries:**\n{}\n\nReturn the final result as JSON in the format {{\"summary\": \"<summary of table>\"}}.\n\n# Output:"
-        prompt = prompt.format(description, partials)
-        response = self.run_prompt(prompt, model, endpoint, token)
-        return response
-        
-        
+        self.property_type = 'summary'

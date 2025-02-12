@@ -11,15 +11,71 @@ A profiling tool for tabular data leveraging the powerful capabilities of LLMs, 
 - **Table-related features**: Table-related features of TableSage.
 - **Table-related features**: Attribute-related features of TableSage. Dashed lines indicate optional arguments, but at least one should be provided.
 
-| Feature                | Input                                                                 | Output                 |
-|------------------------|----------------------------------------------------------------------|------------------------|
-| Table Summarization    | Table                                                                | Attribute              |
-| Table Type Annotation  | Table                                                                | Attribute              |
-| Column Summarization   | Table                                                                | Attribute              |
-| Column Type Annotation | Table                                                                | Attribute              |
-| Insights Acquisition   | List of Official Attributes (Optional), List of Generated Attributes (Optional) (At least one) | List of Insights       |
-| Attributes Comparison  | List of Official Attributes, List of Generated Attributes            | List of Comparisons    |
-| Attributes Fusion      | List of Official Attributes (Optional), List of Generated Attributes (Optional), List of Insights (Optional) (At least one) | Attribute              |
+<table>
+  <tr>
+    <th>Feature</th>
+    <th>Sub-Feature</th>
+    <th>Input</th>
+    <th>Output</th>
+  </tr>
+  <tr>
+    <td rowspan="2">Table</td>
+    <td>Table Summarization</td>
+    <td>Table</td>
+    <td>Property</td>
+  </tr>
+  <tr>
+    <td>Table Type Annotation</td>
+    <td>Table</td>
+    <td>Property</td>
+  </tr>
+  <tr>
+    <td rowspan="2">Column</td>
+    <td>Column Summarization</td>
+    <td>Table</td>
+    <td>Property</td>
+  </tr>
+  <tr>
+    <td>Column Type Annotation</td>
+    <td>Table</td>
+    <td>Property</td>
+  </tr>
+  <tr>
+    <td rowspan="3">Extraction</td>
+    <td>Insights Extraction</td>
+    <td>List of Official Properties (Optional) <br/> List of Generated Properties (Optional) <br/> (At least one)</td>
+    <td>List of Insights</td>
+  </tr>
+  <tr>
+    <td>Spatial Information Extraction</td>
+    <td>Table Description</td>
+    <td>Property</td>
+  </tr>
+  <tr>
+    <td>Temporal Information Extraction</td>
+    <td>Table Description</td>
+    <td>Property</td>
+  </tr>
+  <tr>
+    <td>Comparison</td>
+    <td>Properties Comparison</td>
+    <td>List of Official Properties <br/> List of Generated Properties</td>
+    <td>List of Comparisons</td>
+  </tr>
+  <tr>
+    <td rowspan="2">Fusion</td>
+    <td>Alternative Properties Fusion</td>
+    <td>List of Official Properties (Optional) <br/> List of Generated Properties (Optional) <br/> List of Insights (Optional) <br/> (At least one)</td>
+    <td>Property</td>
+  </tr>
+  <tr>
+    <td>Complementary Properties Merging</td>
+    <td>List of Official Properties (Optional) <br/> List of Generated Properties (Optional) <br/> (At least one)</td>
+    <td>Property</td>
+  </tr>
+</table>
+
+
 
 
 # Quickstart

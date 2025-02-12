@@ -2,40 +2,11 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from openai import OpenAI
 import torch
 import traceback
+import re
 
 class BaseTask:
     def __init__(self):
         pass
-    
-    def serialize_table(self, df):
-        header = '|' + '|'.join(df.columns) + '|'
-        separator = '|' + '|'.join('---' for _ in df.columns) + '|'
-        content = '\n'.join('|' + '|'.join(str(val).strip() for val in row) + '|' for row in df.fillna('').values)
-        return f"{header}\n{separator}\n{content}"
-
-    def create_prompt(self, df, description_ids=0):
-        descriptions = self.descriptions
-        structure = self.structure
-        
-        df_str = self.serialize_table(df)
-
-        if type(description_ids) == int:
-            description_ids = [description_ids]
-
-        prompts = []            
-        for description_id in description_ids:
-            if type(description_id) == str: #direct description
-                description = description_id
-            elif type(description_id) == int:
-                if description_id >= len(descriptions):
-                    raise ValueError("ID not in available templates, please provide a value between 0 and {}.".format(len(descriptions)))
-                description = descriptions[description_id]
-            else:
-                raise ValueError("Wrong type of descriptions")
-            prompt = structure.format(description, df_str)
-            prompts.append(prompt)
-        return prompts
-        
     
     def run_prompts(self, prompts, model, endpoint=None, token=None):
         responses = []
@@ -84,13 +55,19 @@ class BaseTask:
         except Exception as e:
             traceback.print_exc()
             return None         
-    
-    def run(self, df, model, description_ids=0, endpoint=None, token=None, verbose=True):
-        prompts = self.create_prompt(df, description_ids)
-        responses = self.run_prompts(prompts, model, endpoint, token)
-        result = self.merge(responses, model, endpoint, token)
         
-        output = {'result': result}
-        if not verbose:
-            output['responses'] = responses
-        return output
+    def run_prompts(self, prompts, model, endpoint=None, token=None):
+        responses = []
+        for nop, prompt in enumerate(prompts):
+            # print('Prompt no:', nop+1)
+            response = self.run_prompt(prompt, model, endpoint, token)
+            responses.append(response)
+        return responses        
+        
+    def clean_response(self, response):
+        pattern = r'\{\s*"' + re.escape(self.property_type) + r'"\s*:\s*"([^"]*)"\s*\}'
+        match = re.search(pattern, response, re.DOTALL)
+        if match:
+            result = match.group(1).strip()
+            return result
+        return None
