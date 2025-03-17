@@ -47,17 +47,17 @@ class TableSage:
     ############### Table-Related Features ####################################
     
     def summarize_table(self, model, description_ids=0, sampling='random',
-                        sampling_number=5, endpoint=None, token=None, verbose=True):
+                        sampling_number=5, endpoint=None, token=None, verbose=False):
         ts = TableSummarizer()
         sampled_df = self.sample(self.df, sampling, sampling_number)
         responses = ts.run(sampled_df, model, description_ids, endpoint, token)
         result = self.merge_properties(responses, model, 'table_summary', endpoint, token) #TODO: Merger should be different
-        if not verbose:
+        if verbose:
             result['responses'] = responses
         return result
         
     def summarize_column(self, column, model, description_ids=0, sampling='random',
-                         sampling_number=5, endpoint=None, token=None, verbose=True):
+                         sampling_number=5, endpoint=None, token=None, verbose=False):
         cs = ColumnSummarizer()
         if column not in self.df:
             raise ValueError('Column {} not in DataFrame.'.format(column))
@@ -65,22 +65,22 @@ class TableSage:
         sampled_df = self.sample(sampled_df, sampling, sampling_number)
         responses = cs.run(sampled_df, model, description_ids, endpoint, token)
         result = self.merge_properties(responses, model, 'column_summary', endpoint, token) #TODO: Merger should be different
-        if not verbose:
+        if verbose:
             result['responses'] = responses
         return result
     
     def annotate_table(self, model, description_ids=0, sampling='random', sampling_number=5,
-                        endpoint=None, token=None, verbose=True):
+                        endpoint=None, token=None, verbose=False):
         ta = TableAnnotator()
         sampled_df = self.sample(self.df, sampling, sampling_number)
         responses = ta.run(sampled_df, model, description_ids, endpoint, token)
         result = self.merge_properties(responses, model, 'table_type', endpoint, token) #TODO: Merger should be different
-        if not verbose:
+        if verbose:
             result['responses'] = responses
         return result
     
     def annotate_column(self, column, model, description_ids=0, sampling='random', 
-                       sampling_number=5, endpoint=None, token=None, verbose=True):
+                       sampling_number=5, endpoint=None, token=None, verbose=False):
         ca = ColumnAnnotator()
         if column not in self.df:
             raise ValueError('Column {} not in DataFrame.'.format(column))
@@ -88,30 +88,30 @@ class TableSage:
         sampled_df = self.sample(sampled_df, sampling, sampling_number)
         responses = ca.run(sampled_df, model, description_ids, endpoint, token)
         result = self.merge_properties(responses, model, 'column_type', endpoint, token) #TODO: Merger should be different
-        if not verbose:
+        if verbose:
             result['responses'] = responses
         return result
     
     ############### Extraction-Related Features ###############################
     def extract_temporal(self, summary, model, description_ids=0, 
-                         endpoint=None, token=None, verbose=True):
+                         endpoint=None, token=None, verbose=False):
         if summary is None:
             raise ValueError('Summary cannot be None!')
         te = TemporalExtractor()
         responses = te.run(summary, model, description_ids, endpoint, token)
         result = self.merge_properties(responses, model, 'temporal_span', endpoint, token)
-        if not verbose:
+        if verbose:
             result['responses'] = responses
         return result
     
     def extract_spatial(self, summary, model, description_ids=0, 
-                        endpoint=None, token=None, verbose=True):
+                        endpoint=None, token=None, verbose=False):
         if summary is None:
             raise ValueError('Summary cannot be None!')
         se = SpatialExtractor()
         responses = se.run(summary, model, description_ids, endpoint, token)
         result = self.merge_properties(responses, model, 'spatial_coverage', endpoint, token)
-        if not verbose:
+        if verbose:
             result['responses'] = responses
         return result    
     
@@ -156,7 +156,7 @@ class TableSage:
                         column_prompt_ids=None, endpoint=None, token=None,
                         official_table_description=None, 
                         official_column_descriptions=None,
-                        no_prompts=3):
+                        no_prompts=3, verbose=False):
 
         if type(model) == str:
             model = [model]
@@ -228,4 +228,9 @@ class TableSage:
                                        insights, m, endpoint=endpoint, token=token)
         profile = profile['result']
         
-        return {'result': profile}
+        result = {'result': profile}
+        if verbose:
+            result['table_description'] = table_description
+            result['column_info'] = column_info
+            result['insights'] = insights
+        return result
