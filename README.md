@@ -83,7 +83,16 @@ A profiling tool for tabular data leveraging the powerful capabilities of LLMs, 
 pip install tablesage
 
 ## Usage
-To Be Added
+You can easily use TableSage by:
+```
+from tablesage import TableSage
+
+p = TableSage()
+p.load_dataset(path=<path>, separator=<separator>)
+profile = p.profile_dataset(<model>, endpoint=<openai-endpoint>, token=<token>)
+```
+
+You can find more information about OpenAI endpoints [here](https://github.com/openai/openai-python).
 
 # Acknowledgements
 This work was partially funded by the EU Horizon Europe projects STELAR (GA. 101070122)

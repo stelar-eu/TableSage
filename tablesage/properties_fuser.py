@@ -24,6 +24,8 @@ class PropertiesFuser(TextTask):
             column_str += f'{noc+1}. {col}: {desc}\n'
             
         insights_str = ''
+        if insights is None:
+            insights = []
         for noc, ins in enumerate(insights):
             insights_str += f'{noc+1}. {ins}\n'
         

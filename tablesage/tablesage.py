@@ -10,6 +10,7 @@ from .properties_comparer import PropertiesComparer
 from .insights_extractor import InsightsExtractor
 from .properties_fuser import PropertiesFuser
 from collections import Counter
+import random
 
 class TableSage:
     
@@ -19,6 +20,7 @@ class TableSage:
     def load_dataset(self, file, separator=',', encoding='utf-8', engine='python'):
         try:
             self.df = pd.read_csv(file, sep=separator, encoding=encoding, engine='python')
+            # self.df = self.df[['NN', 'Adresa']]
         except Exception as e:
             self.df = None
             raise e
@@ -146,5 +148,84 @@ class TableSage:
         pf = PropertiesFuser()
         prompt = pf.create_prompt(table_description, column_descriptions, insights)
         response = pf.run_prompt(prompt, model, endpoint, token)
-        return {'result': response}    
+        return {'result': response}
     
+    ############### Profile-Related Features ##################################
+    
+    def profile_dataset(self, model, table_prompt_ids=None, 
+                        column_prompt_ids=None, endpoint=None, token=None,
+                        official_table_description=None, 
+                        official_column_descriptions=None,
+                        no_prompts=3):
+
+        if type(model) == str:
+            model = [model]
+        
+        ################ Table Summarization ##################################
+        print('Starting Table Summarization...')
+        if table_prompt_ids is None:
+            table_description_ids = random.sample(range(45), no_prompts)
+
+        table_descriptions = []
+        for m in model:
+            responses = self.summarize_table(m, description_ids=table_description_ids,
+                                             endpoint=endpoint, token=token)
+            table_descriptions += [responses['result']]
+            
+        if official_table_description is not None:
+            table_descriptions += [official_table_description]
+                
+        table_description = self.merge_properties(table_descriptions, model=m,
+                                                  property_type='table_summary',
+                                                  endpoint=endpoint, token=token)
+        table_description = table_description['result']
+        
+        ################ Column Summarization #################################
+        print('Starting Column Profiling...')
+        column_info = {}
+        column_info_descriptions = {}
+        for col in self.df:
+            print("\t", col)
+            if column_prompt_ids is None:
+                column_description_ids = random.sample(range(45), no_prompts)
+    
+            column_descriptions = []
+            for m in model:
+                responses = self.summarize_column(col, m, description_ids=column_description_ids,
+                                                 endpoint=endpoint, token=token)
+                column_descriptions += [responses['result']]
+                
+            if official_column_descriptions is not None and col in official_column_descriptions:
+                column_descriptions += [official_column_descriptions[col]]
+                    
+            column_description = self.merge_properties(column_descriptions, model=m,
+                                                      property_type='column_summary',
+                                                      endpoint=endpoint, token=token)
+            column_description = column_description['result']
+            
+            column_types = []
+            for m in model:
+                responses = self.annotate_column(col, m, description_ids=0,
+                                                 endpoint=endpoint, token=token)
+                column_types += [responses['result']]
+                
+            column_type = self.merge_properties(column_types, model=m,
+                                                property_type='column_type',
+                                                endpoint=endpoint, token=token)
+            column_type = column_type['result']
+            column_info[col] = {'type': column_type, 'summary': column_description}
+            column_info_descriptions[col] = column_description
+            
+        ################# Insights Extraction #################################
+        print('Starting Insights Extraction...')
+        insights = self.extract_insights(column_info, m,
+                                          endpoint=endpoint, token=token)
+        insights = insights['result']
+        
+        ################# Properties Fusion ###################################
+        print('Starting Properties Fusion...')
+        profile = self.fuse_properties(table_description, column_info_descriptions,
+                                       insights, m, endpoint=endpoint, token=token)
+        profile = profile['result']
+        
+        return {'result': profile}
