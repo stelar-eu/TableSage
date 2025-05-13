@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tablesage"
-version = "0.0.5"
+version = "0.0.8"
 description = "A profiling tool for tabular data leveraging the powerful capabilities of LLMs, appropriate for data scientists."
 readme = "README.md"
 requires-python = ">=3.6"
@@ -12,9 +12,7 @@ authors = [
     { name = "Alexandros Zeakis", email = "azeakis@athenarc.gr" }
 ]
 dependencies = [
-    "transformers==4.44.2",
     "openai==1.57.4",
-    "torch==2.4.1",
     "pandas==2.2.3"
 ]
 classifiers = [

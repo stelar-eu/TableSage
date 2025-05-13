@@ -17,10 +17,12 @@ class TableSage:
     def __init__(self):
         pass
     
-    def load_dataset(self, file, separator=',', encoding='utf-8', engine='python'):
+    def load_dataset(self, file, separator=',', encoding='utf-8', engine='python', sheet_name=0):
         try:
-            self.df = pd.read_csv(file, sep=separator, encoding=encoding, engine='python')
-            # self.df = self.df[['NN', 'Adresa']]
+            if file.lower().endswith('.csv'):
+                self.df = pd.read_csv(file, sep=separator, encoding=encoding, engine='python')
+            elif file.lower().endswith('.xlsx'):
+                self.df = pd.read_excel(file, sheet_name=sheet_name)
         except Exception as e:
             self.df = None
             raise e
@@ -147,6 +149,7 @@ class TableSage:
                          token=None):
         pf = PropertiesFuser()
         prompt = pf.create_prompt(table_description, column_descriptions, insights)
+        #print(prompt)
         response = pf.run_prompt(prompt, model, endpoint, token)
         return {'result': response}
     
